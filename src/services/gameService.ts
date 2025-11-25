@@ -87,47 +87,29 @@ export class GameService {
       const startX = Math.floor(GRID_WIDTH / 4);
       const startY = Math.floor(GRID_HEIGHT / 4);
       for (let i = 0; i < INITIAL_SNAKE_LENGTH; i++) {
-        segments.push({ x: startX, y: startY + i });
+        segments.push({ x: startX - i, y: startY });
       }
       return {
         segments,
-        direction: Direction.DOWN,
-        nextDirection: Direction.DOWN,
+        direction: Direction.RIGHT,
+        nextDirection: Direction.RIGHT,
         isAlive: true,
       };
     } else {
       const startX = Math.floor((GRID_WIDTH * 3) / 4);
       const startY = Math.floor((GRID_HEIGHT * 3) / 4);
       for (let i = 0; i < INITIAL_SNAKE_LENGTH; i++) {
-        segments.push({ x: startX, y: startY - i });
+        segments.push({ x: startX + i, y: startY });
       }
       return {
         segments,
-        direction: Direction.UP,
-        nextDirection: Direction.UP,
+        direction: Direction.LEFT,
+        nextDirection: Direction.LEFT,
         isAlive: true,
       };
     }
   }
 
-  // Set player ready status
-  static setPlayerReady(gameId: string, playerId: string, ready: boolean): void {
-    const game = activeGames.get(gameId);
-    if (!game) return;
-
-    const player = game.players.get(playerId);
-    if (player) {
-      player.isReady = ready;
-    }
-
-    // Check if all players are ready
-    if (game.players.size === 2) {
-      const allReady = Array.from(game.players.values()).every(p => p.isReady);
-      if (allReady && game.status === GameStatus.WAITING) {
-        this.startGame(gameId);
-      }
-    }
-  }
 
   // Start the game
   static startGame(gameId: string): void {

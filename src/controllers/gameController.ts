@@ -3,7 +3,6 @@ import { GameService } from '../services/gameService.js';
 import { MatchmakingService } from '../services/matchmakingService.js';
 import type {
   JoinGamePayload,
-  PlayerReadyPayload,
   DirectionChangePayload,
   GameStateUpdate,
 } from '../types/game.js';
@@ -14,6 +13,34 @@ const socketToPlayer = new Map<string, { playerId: string; gameId?: string }>();
 
 // Map game IDs to their interval timers
 const gameIntervals = new Map<string, NodeJS.Timeout>();
+
+// Start game countdown
+function startCountdown(io: Server, gameId: string) {
+  let count = 3;
+
+  // Emit initial countdown
+  io.to(gameId).emit('countdown', { count });
+
+  const countdownInterval = setInterval(() => {
+    count--;
+
+    if (count > 0) {
+      io.to(gameId).emit('countdown', { count });
+    } else {
+      clearInterval(countdownInterval);
+
+      // Start the game
+      GameService.startGame(gameId);
+      const game = GameService.getGame(gameId);
+
+      if (game && game.status === GameStatus.PLAYING) {
+        startGameLoop(io, gameId);
+        io.to(gameId).emit('gameStarted', { gameId });
+        console.log(`Game ${gameId} started after countdown`);
+      }
+    }
+  }, 1000); // 1 second intervals
+}
 
 export function setupGameHandlers(io: Server, socket: Socket) {
   const playerId = socket.id; // Use socket ID as player ID
@@ -63,6 +90,9 @@ export function setupGameHandlers(io: Server, socket: Socket) {
           });
 
           console.log(`Match created: ${gameId}`);
+
+          // Start 3-second countdown
+          startCountdown(io, gameId);
         }
       }
     } else {
@@ -77,31 +107,6 @@ export function setupGameHandlers(io: Server, socket: Socket) {
     MatchmakingService.leaveQueue(playerId);
     socket.emit('matchmakingCancelled');
     console.log(`Player ${playerId} left queue`);
-  });
-
-  // Player marks themselves as ready
-  socket.on('playerReady', (payload: PlayerReadyPayload) => {
-    const playerData = socketToPlayer.get(socket.id);
-    if (!playerData || !playerData.gameId) return;
-
-    const { gameId } = playerData;
-    GameService.setPlayerReady(gameId, playerId, payload.ready);
-
-    const game = GameService.getGame(gameId);
-    if (!game) return;
-
-    // Broadcast ready status to all players
-    io.to(gameId).emit('playerReadyUpdate', {
-      playerId,
-      ready: payload.ready,
-    });
-
-    // If game started, begin the game loop
-    if (game.status === GameStatus.PLAYING) {
-      startGameLoop(io, gameId);
-      io.to(gameId).emit('gameStarted', { gameId });
-      console.log(`Game ${gameId} started`);
-    }
   });
 
   // Player changes direction
