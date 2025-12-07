@@ -2,7 +2,12 @@
 let socket = null;
 
 export function connect() {
-  socket = io('http://localhost:3001', {
+  // Auto-detect server URL: use current domain in production, localhost in dev
+  const SERVER_URL = window.location.hostname === 'localhost'
+    ? 'http://localhost:3001'
+    : window.location.origin;
+
+  socket = io(SERVER_URL, {
     transports: ['websocket'],
     autoConnect: true
   });
