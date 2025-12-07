@@ -8,8 +8,8 @@ import type {
 } from '../types/game.js';
 import { Direction, GameStatus } from '../types/game.js';
 
-const GRID_WIDTH = 30;
-const GRID_HEIGHT = 30;
+const GRID_WIDTH = 20;
+const GRID_HEIGHT = 20;
 const TICK_RATE = 200; // milliseconds
 const INITIAL_SNAKE_LENGTH = 4;
 

@@ -6,8 +6,8 @@ let snakeMeshes = new Map(); // playerId -> { group, segments, targetPositions, 
 let appleGroup;
 let animationId;
 
-const GRID_SIZE = 30;
-const FRUSTUM_SIZE = 35;
+const GRID_SIZE = 20;
+const FRUSTUM_SIZE = 24; // Adjusted to zoom in on smaller grid
 
 export function init() {
   const canvas = document.getElementById('game-canvas');
@@ -15,7 +15,6 @@ export function init() {
   // Scene
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x4da6ff); // Bright blue sky
-  // Removed fog for clearer view
 
   // Camera at ~20-degree angle for better control alignment
   const aspect = window.innerWidth / window.innerHeight;
@@ -32,11 +31,11 @@ export function init() {
   const distance = 40;
   const angle = Math.PI * 70 / 180; // 70 degrees
   camera.position.set(
-    15 + distance * Math.cos(angle),
+    10 + distance * Math.cos(angle),
     distance * 0.7, // Height for better depth view
-    15 + distance * Math.sin(angle)
+    10 + distance * Math.sin(angle)
   );
-  camera.lookAt(15, 0, 15);
+  camera.lookAt(10, 0, 10);
 
   // Renderer
   renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -88,17 +87,17 @@ function createGrid() {
   });
   const plane = new THREE.Mesh(planeGeometry, planeMaterial);
   plane.rotation.x = -Math.PI / 2;
-  plane.position.set(15, 0, 15);
+  plane.position.set(10, 0, 10);
   plane.receiveShadow = true;
   scene.add(plane);
 
   // Grid lines - Darker green
   const gridHelper = new THREE.GridHelper(GRID_SIZE, GRID_SIZE, 0x339933, 0x339933);
-  gridHelper.position.set(15, 0.01, 15);
+  gridHelper.position.set(10, 0.01, 10);
   scene.add(gridHelper);
 
   // Add border walls for depth perception - Brown
-  const wallHeight = 2;
+  const wallHeight = 1;
   const wallMaterial = new THREE.MeshStandardMaterial({
     color: 0x8b4513, // Brown
     roughness: 0.7,
@@ -112,7 +111,7 @@ function createGrid() {
     new THREE.BoxGeometry(GRID_SIZE, wallHeight, 0.2),
     wallMaterial
   );
-  northWall.position.set(15, wallHeight / 2, 0);
+  northWall.position.set(10, wallHeight / 2, 0);
   northWall.castShadow = true;
   scene.add(northWall);
 
@@ -121,7 +120,7 @@ function createGrid() {
     new THREE.BoxGeometry(GRID_SIZE, wallHeight, 0.2),
     wallMaterial
   );
-  southWall.position.set(15, wallHeight / 2, 30);
+  southWall.position.set(10, wallHeight / 2, 20);
   southWall.castShadow = true;
   scene.add(southWall);
 
@@ -130,7 +129,7 @@ function createGrid() {
     new THREE.BoxGeometry(0.2, wallHeight, GRID_SIZE),
     wallMaterial
   );
-  westWall.position.set(0, wallHeight / 2, 15);
+  westWall.position.set(0, wallHeight / 2, 10);
   westWall.castShadow = true;
   scene.add(westWall);
 
@@ -139,7 +138,7 @@ function createGrid() {
     new THREE.BoxGeometry(0.2, wallHeight, GRID_SIZE),
     wallMaterial
   );
-  eastWall.position.set(30, wallHeight / 2, 15);
+  eastWall.position.set(20, wallHeight / 2, 10);
   eastWall.castShadow = true;
   scene.add(eastWall);
 }
