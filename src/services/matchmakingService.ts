@@ -18,9 +18,16 @@ export class MatchmakingService {
       waitingPlayers.splice(existingIndex, 1);
     }
 
-    // If there's someone waiting, pair them up
+    // If there's someone waiting (and it's not the same player), pair them up
     if (waitingPlayers.length > 0) {
       const opponent = waitingPlayers.shift()!;
+
+      // Double-check opponent is not the same player
+      if (opponent.playerId === playerId) {
+        console.log('Same player tried to match with themselves, re-adding to queue');
+        waitingPlayers.push(opponent);
+        return null;
+      }
 
       // Create a new game
       const gameId = uuidv4();

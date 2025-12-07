@@ -11,8 +11,28 @@
   <section id="home-screen" class="screen active">
     <div class="container">
       <h1>3D Snake Battle</h1>
-      <input type="text" id="username-input" placeholder="Enter username" maxlength="20" autofocus>
-      <button id="find-match-btn" class="btn-primary">Find Match</button>
+
+      <!-- Auth mode toggle -->
+      <div class="auth-mode-toggle">
+        <button id="login-mode-btn" class="mode-btn active">Login</button>
+        <button id="register-mode-btn" class="mode-btn">Register</button>
+        <button id="guest-mode-btn" class="mode-btn">Play as Guest</button>
+      </div>
+
+      <!-- Login/Register form -->
+      <div id="auth-form" class="auth-form">
+        <input type="text" id="username-input" placeholder="Enter username" maxlength="20" autofocus>
+        <input type="password" id="password-input" placeholder="Enter password" minlength="3">
+        <div id="auth-error" class="error-message hidden"></div>
+        <button id="auth-submit-btn" class="btn-primary">Login</button>
+      </div>
+
+      <!-- Guest form -->
+      <div id="guest-form" class="auth-form hidden">
+        <input type="text" id="guest-username-input" placeholder="Enter username (optional)" maxlength="20">
+        <p class="guest-note">Stats won't be saved as a guest</p>
+        <button id="guest-submit-btn" class="btn-primary">Find Match as Guest</button>
+      </div>
 
       <div id="stats-display" class="stats-card hidden">
         <h3>Your Stats</h3>

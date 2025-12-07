@@ -2,6 +2,7 @@ import * as SocketClient from './socket.js';
 import * as Renderer from './renderer.js';
 import * as UI from './ui.js';
 import * as Utils from './utils.js';
+import { initAuth, getCurrentUser, updateUserStatsAfterGame } from './auth.js';
 
 // App state
 const AppState = {
@@ -18,6 +19,24 @@ let currentGameId = null;
 let myPlayerId = null;
 let players = [];
 
+// re-enable auth buttons after canceling/finishing match
+function resetAuthButtons() {
+  const authSubmitBtn = document.getElementById('auth-submit-btn');
+  const guestSubmitBtn = document.getElementById('guest-submit-btn');
+  if (authSubmitBtn && guestSubmitBtn) {
+    authSubmitBtn.disabled = false;
+    guestSubmitBtn.disabled = false;
+    const loginModeActive = document.getElementById('login-mode-btn')?.classList.contains('active');
+    const registerModeActive = document.getElementById('register-mode-btn')?.classList.contains('active');
+    if (loginModeActive) {
+      authSubmitBtn.textContent = 'Login';
+    } else if (registerModeActive) {
+      authSubmitBtn.textContent = 'Register';
+    }
+    guestSubmitBtn.textContent = 'Find Match as Guest';
+  }
+}
+
 // Initialize app
 function init() {
   console.log('Initializing 3D Snake Game...');
@@ -25,20 +44,36 @@ function init() {
   // Connect to server
   SocketClient.connect();
 
+  // Setup authentication
+  initAuth();
+
   // Setup socket event handlers
   setupSocketHandlers();
 
   // Setup DOM event handlers
   setupDOMHandlers();
 
-  // Load last username
-  const lastUsername = Utils.getLastUsername();
-  if (lastUsername) {
-    document.getElementById('username-input').value = lastUsername;
-    // Load and display stats
-    const stats = Utils.getStats(lastUsername);
-    UI.updateStats(stats);
+  // Listen for successful authentication
+  document.addEventListener('authSuccess', handleAuthSuccess);
+}
+
+function handleAuthSuccess(event) {
+  const user = event.detail;
+  currentUsername = user.username;
+
+  console.log('Auth success:', user);
+
+  // reset auth buttons
+  resetAuthButtons();
+
+  // show stats if not guest
+  if (!user.isGuest && user.stats) {
+    UI.updateStats(user.stats);
   }
+
+  // start matchmaking
+  SocketClient.findMatch(user.username);
+  UI.showScreen('searching-screen');
 }
 
 function setupSocketHandlers() {
@@ -85,7 +120,7 @@ function setupSocketHandlers() {
     }
   });
 
-  SocketClient.onGameOver((data) => {
+  SocketClient.onGameOver(async (data) => {
     console.log('Game over!', data);
     currentState = AppState.GAMEOVER;
 
@@ -94,9 +129,18 @@ function setupSocketHandlers() {
     const isDraw = !data.winnerId;
 
     // Update stats
-    const updatedStats = isDraw
-      ? Utils.updateStats(currentUsername, false) // Treat draw as loss for win streak
-      : Utils.updateStats(currentUsername, iWon);
+    let updatedStats;
+    const user = getCurrentUser();
+
+    if (user && !user.isGuest) {
+      const isWin = isDraw ? false : iWon;
+      updatedStats = await updateUserStatsAfterGame(isWin);
+    } else {
+      // update local stats if guest
+      updatedStats = isDraw
+        ? Utils.updateStats(currentUsername, false)
+        : Utils.updateStats(currentUsername, iWon);
+    }
 
     // Disable keyboard controls
     window.removeEventListener('keydown', handleKeyPress);
@@ -109,10 +153,20 @@ function setupSocketHandlers() {
     UI.showGameOver(data.winnerId, myPlayerId, updatedStats);
   });
 
-  SocketClient.onPlayerDisconnected(() => {
+  SocketClient.onPlayerDisconnected(async () => {
     console.log('Opponent disconnected');
-    // Treat as win
-    const updatedStats = Utils.updateStats(currentUsername, true);
+
+    // Treat as win - update stats
+    let updatedStats;
+    const user = getCurrentUser();
+
+    if (user && !user.isGuest) {
+      // Authenticated user - update in database
+      updatedStats = await updateUserStatsAfterGame(true);
+    } else {
+      // Guest user - update in localStorage
+      updatedStats = Utils.updateStats(currentUsername, true);
+    }
 
     window.removeEventListener('keydown', handleKeyPress);
     Renderer.cleanup();
@@ -128,31 +182,11 @@ function setupSocketHandlers() {
     currentState = AppState.HOME;
     UI.showScreen('home-screen');
     UI.enableInput();
+    resetAuthButtons();
   });
 }
 
 function setupDOMHandlers() {
-  // Find Match button
-  document.getElementById('find-match-btn').addEventListener('click', () => {
-    const username = document.getElementById('username-input').value.trim();
-
-    if (!Utils.validateUsername(username)) {
-      alert('Please enter a username (1-20 characters)');
-      return;
-    }
-
-    currentUsername = username;
-    Utils.saveUsername(username);
-
-    // Load stats
-    const stats = Utils.getStats(username);
-    UI.updateStats(stats);
-
-    // Start matchmaking
-    UI.disableInput();
-    SocketClient.findMatch(username);
-  });
-
   // Cancel button
   document.getElementById('cancel-btn').addEventListener('click', () => {
     SocketClient.cancelMatchmaking();
@@ -166,17 +200,12 @@ function setupDOMHandlers() {
     players = [];
 
     UI.showScreen('home-screen');
-    UI.enableInput();
+    resetAuthButtons();
 
-    // Reload stats
-    const stats = Utils.getStats(currentUsername);
-    UI.updateStats(stats);
-  });
-
-  // Enter key on username input
-  document.getElementById('username-input').addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-      document.getElementById('find-match-btn').click();
+    // Reload stats for authenticated users
+    const user = getCurrentUser();
+    if (user && !user.isGuest && user.stats) {
+      UI.updateStats(user.stats);
     }
   });
 }
