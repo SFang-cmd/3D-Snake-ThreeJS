@@ -8,7 +8,7 @@ node_modules
 
 # Prisma
 /src/generated/prisma
-/prisma/migrations/**/migration.sql
+# Keep migration files for deployment
 
 # Build output
 dist
