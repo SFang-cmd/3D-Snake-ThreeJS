@@ -24,12 +24,6 @@ Create a `.env` file in the root directory with the database connection:
 DATABASE_URL="database-url-here"
 ```
 
-During development, this a local database with Prisma PostgreSQL can be set up with the following:
-
-```bash
-npx prisma dev
-```
-
 ### 3. Run Prisma Migrations
 
 Generate the database schema and create tables:
@@ -55,10 +49,14 @@ npm run dev
 ```
 ├── src/
 │   ├── controllers/      # Socket.io event handlers
-│   ├── services/         # Game logic and matchmaking
+│   ├── services/         # Game logic, matchmaking, and auth
 │   ├── types/            # TypeScript type definitions
+│   ├── lib/              # Prisma client
 │   └── server.ts         # Express and Socket.io server
-├── public/               # Frontend HTML/JS
+├── public/
+│   ├── js/               # Frontend game logic with 3D
+│   ├── css/              # Styles
+│   └── index.html        # Main HTML file
 ├── prisma/               # Database schema
 └── package.json
 ```
