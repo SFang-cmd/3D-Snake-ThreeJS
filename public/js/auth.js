@@ -134,9 +134,9 @@ async function handleAuthSubmit() {
 async function handleGuestSubmit() {
   const usernameInput = document.getElementById('guest-username-input').value.trim();
   const guestSubmitBtn = document.getElementById('guest-submit-btn');
-  const authError = document.getElementById('auth-error');
+  const guestError = document.getElementById('guest-error');
 
-  authError.classList.add('hidden');
+  guestError.classList.add('hidden');
 
   // If no username provided, generate random username
   if (!usernameInput) {
@@ -152,7 +152,7 @@ async function handleGuestSubmit() {
   }
 
   if (usernameInput.length < 1 || usernameInput.length > 20) {
-    showAuthError('Username must be 1-20 characters');
+    showGuestError('Username must be 1-20 characters');
     return;
   }
 
@@ -172,7 +172,7 @@ async function handleGuestSubmit() {
     const data = await response.json();
 
     if (data.success && data.exists) {
-      showAuthError('Username is already registered. Please choose a different username or login.');
+      showGuestError('Username is already registered. Please choose a different username or login.');
       guestSubmitBtn.disabled = false;
       guestSubmitBtn.textContent = 'Find Match as Guest';
       return;
@@ -189,7 +189,7 @@ async function handleGuestSubmit() {
     document.dispatchEvent(new CustomEvent('authSuccess', { detail: currentUser }));
   } catch (error) {
     console.error('Error checking username:', error);
-    showAuthError('Network error. Please try again.');
+    showGuestError('Network error. Please try again.');
     guestSubmitBtn.disabled = false;
     guestSubmitBtn.textContent = 'Find Match as Guest';
   }
@@ -199,6 +199,12 @@ function showAuthError(message) {
   const authError = document.getElementById('auth-error');
   authError.textContent = message;
   authError.classList.remove('hidden');
+}
+
+function showGuestError(message) {
+  const guestError = document.getElementById('guest-error');
+  guestError.textContent = message;
+  guestError.classList.remove('hidden');
 }
 
 export function getCurrentUser() {
